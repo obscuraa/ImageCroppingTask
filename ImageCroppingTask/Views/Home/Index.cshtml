@@ -1,0 +1,78 @@
+﻿@{
+    ViewData["Title"] = "Image cropper";
+}
+
+@*<div class="text-center">
+    <h1 class="display-4">Welcome</h1>
+    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+</div>*@
+
+<div class="main">
+    <div class="header">
+        Crop image file
+    </div>
+    <div class="body">
+        <div id="imgcrop"></div>
+        <input id="BrowseFile" type="file" class="form-control" value="Choose image" accept="image/*" />
+        <button id="Upload" style="margin-top: 10px;" name="btn" class="btn btn-success">Crop image</button>
+    </div>
+</div>
+
+@section scripts{
+    <script type="text/javascript">
+        var imagefield = $('#imgcrop').croppie
+            ({
+                viewport: { width: 250, height: 250 },
+                boundary: { width: 600, height: 700 },
+                showZoomer: true,
+                url: '/Defaultimages/preview.jpg',
+                format: 'png'
+            });
+
+        function readFile(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+
+                reader.onload = function (e) {
+                    $('#imgcrop').croppie('bind', {
+                        url: e.target.result
+                    });
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        $('#BrowseFile').on('change', function () { readFile(this); });
+
+        $('#Upload').on('click', function () {
+            imagefield.croppie('result', 'blob').then(function (blob) {
+                var formData = new FormData();
+                formData.append('filename', 'Filename.png');
+                formData.append('blob', blob);
+
+                var myAppUrlSettings =
+                {
+                    MyUrl: '@Url.Action("SaveCroppedImage", "Home")'
+                }
+
+                var request = new XMLHttpRequest();
+                request.open('POST', myAppUrlSettings.MyUrl);
+                request.send(formData);
+                request.onreadystatechange = function () {
+                    if (this.readyState === XMLHttpRequest.DONE && this.status === 200) {
+                        var response = JSON.parse(request.responseText);
+
+                        if (response.message == "OK") {
+                            alert('Photo cropped successfully');
+                            window.location.reload;
+                        }
+                        else if (response.message == "ERROR") {
+                            alert('Error');
+                            window.location.reload;
+                        }
+                    }
+                }
+            });
+        });
+</script>
+}
